@@ -1,3 +1,4 @@
+#if 0
 /****************************************************************************************************
 
  RepRapFirmware - Network: RepRapPro Ormerod with Arduino Due controller
@@ -1439,3 +1440,4 @@ void NetworkTransaction::FreePbuf()
 }
 
 // End
+#endif

@@ -160,8 +160,8 @@ RepRap reprap;
 const char *moduleName[] =
 {
 	"Platform",
-	"Network",
-	"Webserver",
+//	"Network",
+//	"Webserver",
 	"GCodes",
 	"Move",
 	"Heat",
@@ -182,9 +182,10 @@ RepRap::RepRap() : active(false), debug(0), stopped(false), spinningModule(noMod
 		warmUpDuration(0.0), layerEstimatedTimeLeft(0.0), lastLayerTime(0.0), lastLayerFilament(0.0), numLayerSamples(0)
 {
   platform = new Platform();
-  network = new Network(platform);
-  webserver = new Webserver(platform, network);
-  gCodes = new GCodes(platform, webserver);
+//  network = new Network(platform);
+//  webserver = new Webserver(platform, network);
+//  gCodes = new GCodes(platform, webserver);
+  gCodes = new GCodes(platform);
   move = new Move(platform, gCodes);
   heat = new Heat(platform, gCodes);
   toolList = NULL;
@@ -192,7 +193,7 @@ RepRap::RepRap() : active(false), debug(0), stopped(false), spinningModule(noMod
 
 void RepRap::Init()
 {
-  debug = 0;
+  debug = 0xffff;
   activeExtruders = 1;		// we always report at least 1 extruder to the web interface
   activeHeaters = 2;		// we always report the bed heater + 1 extruder heater to the web interface
   SetPassword(DEFAULT_PASSWORD);
@@ -208,23 +209,23 @@ void RepRap::Init()
   // All of the following init functions must execute reasonably quickly before the watchdog times us out
   platform->Init();
   gCodes->Init();
-  webserver->Init();
+//webserver->Init();
   move->Init();
   heat->Init();
   currentTool = NULL;
   message[0] = 0;
   const uint32_t wdtTicks = 256;	// number of watchdog ticks @ 32768Hz/128 before the watchdog times out (max 4095)
-  WDT_Enable(WDT, (wdtTicks << WDT_MR_WDV_Pos) | (wdtTicks << WDT_MR_WDD_Pos) | WDT_MR_WDRSTEN);	// enable watchdog, reset the mcu if it times out
+//  WDT_Enable(WDT, (wdtTicks << WDT_MR_WDV_Pos) | (wdtTicks << WDT_MR_WDD_Pos) | WDT_MR_WDRSTEN);	// enable watchdog, reset the mcu if it times out
   coldExtrude = true;		// DC42 changed default to true for compatibility because for now we are aiming for compatibility with RRP 0.78
   active = true;			// must do this before we start the network, else the watchdog may time out
 
   platform->Message(HOST_MESSAGE, "%s Version %s dated %s\n", NAME, VERSION, DATE);
-  FileStore *startup = platform->GetFileStore(platform->GetSysDir(), platform->GetConfigFile(), false);
+//  FileStore *startup = platform->GetFileStore(platform->GetSysDir(), platform->GetConfigFile(), false);
 
   platform->AppendMessage(HOST_MESSAGE, "\n\nExecuting ");
-  if(startup != NULL)
+  if(0/*startup != NULL*/)
   {
-	  startup->Close();
+//	  startup->Close();
 	  platform->AppendMessage(HOST_MESSAGE, "%s...\n\n", platform->GetConfigFile());
 	  scratchString.printf("M98 P%s\n", platform->GetConfigFile());
   }
@@ -257,7 +258,7 @@ void RepRap::Init()
   }
   processingConfig = false;
 
-  if (network->IsEnabled())
+/*  if (network->IsEnabled())
   {
 	  platform->AppendMessage(HOST_MESSAGE, "\nStarting network...\n");
 	  network->Init(); // Need to do this here, as the configuration GCodes may set IP address etc.
@@ -265,7 +266,7 @@ void RepRap::Init()
   else
   {
 	  platform->AppendMessage(HOST_MESSAGE, "\nNetwork disabled.\n");
-  }
+  }*/
 
   platform->AppendMessage(HOST_MESSAGE, "\n%s is up and running.\n", NAME);
   fastLoop = FLT_MAX;
@@ -279,7 +280,7 @@ void RepRap::Exit()
   heat->Exit();
   move->Exit();
   gCodes->Exit();
-  webserver->Exit();
+//  webserver->Exit();
   platform->Message(HOST_MESSAGE, "RepRap class exited.\n");
   platform->Exit();
 }
@@ -293,13 +294,14 @@ void RepRap::Spin()
 	ticksInSpinState = 0;
 	platform->Spin();
 
-	spinningModule = moduleNetwork;
+/*	spinningModule = moduleNetwork;
 	ticksInSpinState = 0;
 	network->Spin();
 
 	spinningModule = moduleWebserver;
 	ticksInSpinState = 0;
 	webserver->Spin();
+*/
 
 	spinningModule = moduleGcodes;
 	ticksInSpinState = 0;
@@ -347,8 +349,8 @@ void RepRap::Diagnostics()
   move->Diagnostics();
   heat->Diagnostics();
   gCodes->Diagnostics();
-  network->Diagnostics();
-  webserver->Diagnostics();
+//network->Diagnostics();
+//webserver->Diagnostics();
 }
 
 // Turn off the heaters, disable the motors, and
@@ -1101,7 +1103,7 @@ void RepRap::GetLegacyStatusResponse(StringRef& response, uint8_t type, int seq)
 	response.cat(",\"message\":");
 	EncodeString(response, message, 2, false);
 
-	if (type < 2)
+/*	if (type < 2)
 	{
 		response.catf(",\"buff\":%u", webserver->GetGcodeBufferSpace());	// send the amount of buffer space available for gcodes
 	}
@@ -1123,7 +1125,7 @@ void RepRap::GetLegacyStatusResponse(StringRef& response, uint8_t type, int seq)
 	}
 
 	response.cat("}");
-}
+*/}
 
 // Copy some parameter text, stopping at the first control character or when the destination buffer is full, and removing trailing spaces
 void RepRap::CopyParameterText(const char* src, char *dst, size_t length)
@@ -1192,14 +1194,14 @@ void RepRap::EncodeString(StringRef& response, const char* src, size_t spaceToLe
 	response[j++] = '"';
 	response[j] = 0;
 }
-
+/*
 // Get just the machine name in JSON format
 void RepRap::GetNameResponse(StringRef& response) const
 {
 	response.copy("{\"myName\":");
 	EncodeString(response, myName, 2, false);
 	response.cat("}");
-}
+}*/
 
 // Get the list of files in the specified directory in JSON format
 void RepRap::GetFilesResponse(StringRef& response, const char* dir) const
@@ -1228,7 +1230,7 @@ void RepRap::GetFileInfoResponse(StringRef& response, const char* filename) cons
 	// Poll file info for a specific file
 	if (filename != NULL)
 	{
-		GcodeFileInfo info;
+	/*	GcodeFileInfo info;
 		bool found = webserver->GetFileInfo("0:/", filename, info);
 		if (found)
 		{
@@ -1249,7 +1251,7 @@ void RepRap::GetFileInfoResponse(StringRef& response, const char* filename) cons
 			}
 			response.catf("],\"generatedBy\":\"%s\"}", info.generatedBy);
 		}
-		else
+		else */
 		{
 			response.copy("{\"err\":1}");
 		}
@@ -1283,7 +1285,7 @@ void RepRap::GetFileInfoResponse(StringRef& response, const char* filename) cons
 
 void RepRap::StartingFilePrint(const char *filename)
 {
-	fileInfoDetected = Webserver::GetFileInfo(platform->GetGCodeDir(), filename, currentFileInfo);
+//	fileInfoDetected = Webserver::GetFileInfo(platform->GetGCodeDir(), filename, currentFileInfo);
 	printStartTime = platform->Time();
 	strncpy(fileBeingPrinted, filename, ARRAY_SIZE(fileBeingPrinted));
 	fileBeingPrinted[ARRAY_UPB(fileBeingPrinted)] = 0;

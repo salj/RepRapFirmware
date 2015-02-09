@@ -27,11 +27,12 @@
 
 const char GCodes::axisLetters[AXES] = {'X', 'Y', 'Z'};
 
-GCodes::GCodes(Platform* p, Webserver* w)
+//GCodes::GCodes(Platform* p, Webserver* w)
+GCodes::GCodes(Platform* p)
 {
 	active = false;
 	platform = p;
-	webserver = w;
+//	webserver = w;
 	webGCode = new GCodeBuffer(platform, "web: ");
 	fileGCode = new GCodeBuffer(platform, "file: ");
 	serialGCode = new GCodeBuffer(platform, "serial: ");
@@ -350,7 +351,7 @@ void GCodes::StartNextGCode(StringRef& reply)
 	// If file weren't last, then the others would never get a look in when
 	// a file was being printed.
 
-	if (!webGCode->Active() && webserver->GCodeAvailable())
+/*	if (!webGCode->Active() && webserver->GCodeAvailable())
 	{
 		int8_t i = 0;
 		do
@@ -374,13 +375,13 @@ void GCodes::StartNextGCode(StringRef& reply)
 		platform->ClassReport(longWait);
 		return;
 	}
-
+*/
 	// Now the serial interfaces.
 
 	if (platform->GetLine()->Status() & byteAvailable)
 	{
 		// First check the special case of uploading the reprap.htm file
-		if (serialGCode->WritingFileDirectory() == platform->GetWebDir())
+/*		if (serialGCode->WritingFileDirectory() == platform->GetWebDir())
 		{
 			char b;
 			platform->GetLine()->Read(b);
@@ -390,7 +391,7 @@ void GCodes::StartNextGCode(StringRef& reply)
 		}
 
 		// Otherwise just deal in general with incoming bytes from the serial interface
-		else if (!serialGCode->Active())
+		else */ if (!serialGCode->Active())
 		{
 			// Read several bytes instead of just one. This approximately doubles the speed of file uploading.
 			int8_t i = 0;
@@ -436,11 +437,11 @@ void GCodes::StartNextGCode(StringRef& reply)
 			++i;
 		} while (i < 16 && (platform->GetAux()->Status() & byteAvailable));
 	}
-	else if (webGCode->Active())
+/*	else if (webGCode->Active())
 	{
 		// Note: Direct web-printing has been dropped, so it's safe to execute web codes immediately
 		webGCode->SetFinished(ActOnCode(webGCode, reply));
-	}
+	}*/
 	else if (serialGCode->Active())
 	{
 		// We want codes from the serial interface to be queued unless the print has been paused
@@ -1553,6 +1554,7 @@ void GCodes::DisableDrives()
 	SetAllAxesNotHomed();
 }
 
+/*
 // Does what it says.
 
 void GCodes::SetEthernetAddress(GCodeBuffer *gb, int mCode)
@@ -1643,6 +1645,7 @@ void GCodes::SetMACAddress(GCodeBuffer *gb)
 		platform->Message(BOTH_ERROR_MESSAGE, "Dud MAC address: %s\n", gb->Buffer());
 	}
 }
+*/
 
 // Handle sending a reply back to the appropriate interface(s).
 // Note that 'reply' may be null.
@@ -3149,7 +3152,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 		break;
 
     case 540: // Set/report MAC address
-    	if(gb->Seen('P'))
+/*    	if(gb->Seen('P'))
     	{
     	    SetMACAddress(gb);
     	}
@@ -3158,10 +3161,10 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 			const byte* mac = platform->MACAddress();
 			reply.printf("MAC: %x:%x:%x:%x:%x:%x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		}
-    	break;
+*/    	break;
 
 	case 550: // Set/report machine name
-		if (gb->Seen('P'))
+/*		if (gb->Seen('P'))
 		{
 			reprap.SetName(gb->GetString());
 		}
@@ -3169,7 +3172,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 		{
 			reply.printf("RepRap name: %s\n", reprap.GetName());
 		}
-		break;
+*/		break;
 
 	case 551: // Set password (no option to report it)
 		if (gb->Seen('P'))
@@ -3179,7 +3182,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 		break;
 
 	case 552: // Enable/Disable network and/or Set/Get IP address
-		// dc42: IMO providing a gcode to enable/disable network access is a waste of space, when it is easier and safer to unplug the network cable.
+/*		// dc42: IMO providing a gcode to enable/disable network access is a waste of space, when it is easier and safer to unplug the network cable.
 		// But for compatibility with RRP official firmware, here it is.
 		{
 			bool seen = false;
@@ -3210,10 +3213,10 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 						ip[0], ip[1], ip[2], ip[3]);
 			}
 		}
-		break;
+*/		break;
 
 	case 553: // Set/Get netmask
-		if (gb->Seen('P'))
+/*		if (gb->Seen('P'))
 		{
 			SetEthernetAddress(gb, code);
 		}
@@ -3222,10 +3225,10 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 			const byte *nm = platform->NetMask();
 			reply.printf("Net mask: %d.%d.%d.%d\n ", nm[0], nm[1], nm[2], nm[3]);
 		}
-		break;
+*/		break;
 
 	case 554: // Set/Get gateway
-		if (gb->Seen('P'))
+/*		if (gb->Seen('P'))
 		{
 			SetEthernetAddress(gb, code);
 		}
@@ -3234,7 +3237,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 			const byte *gw = platform->GateWay();
 			reply.printf("Gateway: %d.%d.%d.%d\n ", gw[0], gw[1], gw[2], gw[3]);
 		}
-		break;
+*/		break;
 
 	case 555: // Set/report firmware type to emulate
 		if (gb->Seen('P'))
@@ -3390,7 +3393,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 		break;
 
 	case 560: // Upload reprap.htm or another web interface file
-		{
+/*		{
 			const char* str = (gb->Seen('P') ? gb->GetString() : INDEX_PAGE);
 			bool ok = OpenFileToWrite(platform->GetWebDir(), str, gb);
 			if (ok)
@@ -3403,7 +3406,7 @@ bool GCodes::HandleMcode(GCodeBuffer* gb, StringRef& reply)
 				error = true;
 			}
 		}
-		break;
+*/		break;
 
 	case 561:
 		reprap.GetMove()->SetIdentityTransform();

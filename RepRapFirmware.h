@@ -43,9 +43,9 @@ extern const char *moduleName[];
 
 // Warn of what's to come, so we can use pointers to classes...
 
-class Network;
+//class Network;
 class Platform;
-class Webserver;
+//class Webserver;
 class GCodes;
 class Move;
 class Heat;
@@ -112,9 +112,9 @@ extern StringRef scratchString;
 
 #include "Arduino.h"
 #include "Configuration.h"
-#include "Network.h"
+//#include "Network.h"
 #include "Platform.h"
-#include "Webserver.h"
+//#include "Webserver.h"
 #include "GCodes.h"
 #include "Move.h"
 #include "Heat.h"

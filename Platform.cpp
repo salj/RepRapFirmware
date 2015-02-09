@@ -20,7 +20,7 @@
  ****************************************************************************************************/
 
 #include "RepRapFirmware.h"
-#include "DueFlashStorage.h"
+//#include "DueFlashStorage.h"
 #if LWIP_STATS
 #include "lwip/src/include/lwip/stats.h"
 #endif
@@ -111,8 +111,8 @@ Platform::Platform() :
 		tickState(0), fileStructureInitialised(false), active(false), errorCodeBits(0), debugCode(0),
 		messageString(messageStringBuffer, ARRAY_SIZE(messageStringBuffer)), autoSaveEnabled(false)
 {
-	line = new Line(SerialUSB);
-	aux = new Line(Serial);
+	line = new Line(Serial);
+	aux = line;
 
 	// Files
 
@@ -138,6 +138,7 @@ void Platform::Init()
 	SerialUSB.begin(baudRates[0]);
 	Serial.begin(baudRates[1]);					// this can't be done in the constructor because the Arduino port initialisation isn't complete at that point
 
+/*
 #if __cplusplus >= 201103L
 	static_assert(sizeof(FlashData) + sizeof(SoftwareResetData) <= FLASH_DATA_LENGTH, "NVData too large");
 #else
@@ -149,7 +150,7 @@ void Platform::Init()
 		BadStaticAssert();
 	}
 #endif
-
+*/
 	ResetNvData();
 
 	line->Init();
@@ -165,8 +166,8 @@ void Platform::Init()
 
 	fileStructureInitialised = true;
 
-	mcpDuet.begin(); //only call begin once in the entire execution, this begins the I2C comms on that channel for all objects
-	mcpExpansion.setMCP4461Address(0x2E); //not required for mcpDuet, as this uses the default address
+//	mcpDuet.begin(); //only call begin once in the entire execution, this begins the I2C comms on that channel for all objects
+//	mcpExpansion.setMCP4461Address(0x2E); //not required for mcpDuet, as this uses the default address
 	sysDir = SYS_DIR;
 	configFile = CONFIG_FILE;
 	defaultFile = DEFAULT_FILE;
@@ -183,9 +184,9 @@ void Platform::Init()
 	ARRAY_INIT(accelerations, ACCELERATIONS);
 	ARRAY_INIT(driveStepsPerUnit, DRIVE_STEPS_PER_UNIT);
 	ARRAY_INIT(instantDvs, INSTANT_DVS);
-	ARRAY_INIT(potWipes, POT_WIPES);
-	senseResistor = SENSE_RESISTOR;
-	maxStepperDigipotVoltage = MAX_STEPPER_DIGIPOT_VOLTAGE;
+	//ARRAY_INIT(potWipes, POT_WIPES);
+	//senseResistor = SENSE_RESISTOR;
+	//maxStepperDigipotVoltage = MAX_STEPPER_DIGIPOT_VOLTAGE;
 	//numMixingDrives = NUM_MIXING_DRIVES;
 
 	// Z PROBE
@@ -216,7 +217,7 @@ void Platform::Init()
 	timeToHot = TIME_TO_HOT;
 	lastRpmResetTime = 0.0;
 
-	webDir = WEB_DIR;
+//	webDir = WEB_DIR;
 	gcodeDir = GCODE_DIR;
 	tempDir = TEMP_DIR;
 
@@ -560,10 +561,10 @@ bool Platform::MustHomeXYBeforeZ() const
 void Platform::ResetNvData()
 {
 	nvData.compatibility = me;
-	ARRAY_INIT(nvData.ipAddress, IP_ADDRESS);
+/*	ARRAY_INIT(nvData.ipAddress, IP_ADDRESS);
 	ARRAY_INIT(nvData.netMask, NET_MASK);
 	ARRAY_INIT(nvData.gateWay, GATE_WAY);
-	ARRAY_INIT(nvData.macAddress, MAC_ADDRESS);
+	ARRAY_INIT(nvData.macAddress, MAC_ADDRESS);*/
 
 	nvData.zProbeType = 0;	// Default is to use no Z probe switch
 	ARRAY_INIT(nvData.zProbeAxes, Z_PROBE_AXES);
@@ -739,10 +740,10 @@ void Platform::SoftwareReset(uint16_t reason)
 		{
 			reason |= SoftwareResetReason::inUsbOutput;	// if we are resetting because we are stuck in a Spin function, record whether we are trying to send to USB
 		}
-		if (reprap.GetNetwork()->InLwip())
+/*		if (reprap.GetNetwork()->InLwip())
 		{
 			reason |= SoftwareResetReason::inLwipSpin;
-		}
+		}*/
 		if (aux->inWrite)
 		{
 			reason |= SoftwareResetReason::inAuxOutput;	// if we are resetting because we are stuck in a Spin function, record whether we are trying to send to aux
@@ -755,6 +756,7 @@ void Platform::SoftwareReset(uint16_t reason)
 	temp.magic = SoftwareResetData::magicValue;
 	temp.resetReason = reason;
 	GetStackUsage(NULL, NULL, &temp.neverUsedRam);
+//	DueFlashStorage::write(SoftwareResetData::nvAddress, &temp, sizeof(SoftwareResetData));
 	if (reason != SoftwareResetReason::user)
 	{
 		strncpy(temp.lastMessage, messageString.Pointer(), sizeof(temp.lastMessage) - 1);
@@ -766,7 +768,7 @@ void Platform::SoftwareReset(uint16_t reason)
 	}
 
 	// Save diagnostics data to Flash and reset the software
-	DueFlashStorage::write(SoftwareResetData::nvAddress, &temp, sizeof(SoftwareResetData));
+//	DueFlashStorage::write(SoftwareResetData::nvAddress, &temp, sizeof(SoftwareResetData));
 
 	rstc_start_software_reset(RSTC);
 	for(;;) {}
@@ -789,7 +791,7 @@ void TC3_Handler()
 void TC4_Handler()
 {
 	TC_GetStatus(TC1, 1);
-	reprap.GetNetwork()->Interrupt();
+	//reprap.GetNetwork()->Interrupt();
 }
 
 void FanInterrupt()
@@ -1017,7 +1019,7 @@ void Platform::Diagnostics()
 			resetReasons[(REG_RSTC_SR & RSTC_SR_RSTTYP_Msk) >> RSTC_SR_RSTTYP_Pos]);
 
 	// Show the error code stored at the last software reset
-	{
+	/*{
 		SoftwareResetData temp;
 		temp.magic = 0;
 		DueFlashStorage::read(SoftwareResetData::nvAddress, &temp, sizeof(SoftwareResetData));
@@ -1030,7 +1032,7 @@ void Platform::Diagnostics()
 				AppendMessage(BOTH_MESSAGE, "Last message before reset: %s", temp.lastMessage); // usually ends with NL
 			}
 		}
-	}
+	}*/
 
 	// Show the current error codes
 	AppendMessage(BOTH_MESSAGE, "Error status: %u\n", errorCodeBits);
@@ -1251,12 +1253,12 @@ void Platform::Disable(size_t drive)
 
 void Platform::SetMotorCurrent(byte drive, float current)
 {
-	unsigned short pot = (unsigned short)(0.256*current*8.0*senseResistor/maxStepperDigipotVoltage);
+//	unsigned short pot = (unsigned short)(0.256*current*8.0*senseResistor/maxStepperDigipotVoltage);
 //	Message(HOST_MESSAGE, "Set pot to: ");
 //	snprintf(scratchString, STRING_LENGTH, "%d", pot);
 //	Message(HOST_MESSAGE, scratchString);
 //	Message(HOST_MESSAGE, "\n");
-	if(drive < 4)
+/*	if(drive < 4)
 	{
 		mcpDuet.setNonVolatileWiper(potWipes[drive], pot);
 		mcpDuet.setVolatileWiper(potWipes[drive], pot);
@@ -1265,13 +1267,13 @@ void Platform::SetMotorCurrent(byte drive, float current)
 	{
 		mcpExpansion.setNonVolatileWiper(potWipes[drive], pot);
 		mcpExpansion.setVolatileWiper(potWipes[drive], pot);
-	}
+	}*/
 }
 
 
 float Platform::MotorCurrent(size_t drive)
 {
-	unsigned short pot;
+/*	unsigned short pot;
 	if (drive < 4)
 	{
 		pot = mcpDuet.getNonVolatileWiper(potWipes[drive]);
@@ -1281,7 +1283,7 @@ float Platform::MotorCurrent(size_t drive)
 		pot = mcpExpansion.getNonVolatileWiper(potWipes[drive]);
 	}
 
-	return (float)pot * maxStepperDigipotVoltage / (0.256 * 8.0 * senseResistor);
+	return (float)pot * maxStepperDigipotVoltage / (0.256 * 8.0 * senseResistor);*/
 }
 
 // Get current cooling fan speed on a scale between 0 and 1
@@ -1414,12 +1416,12 @@ void Platform::Message(char type, const StringRef& message)
 
 	case WEB_MESSAGE:
 		// Message that is to be sent to the web
-		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), false);
+//		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), false);
 		break;
 
 	case WEB_ERROR_MESSAGE:
 		// Message that is to be sent to the web - flags an error
-		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), true);
+//		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), true);
 		break;
 
 	case BOTH_MESSAGE:
@@ -1432,7 +1434,7 @@ void Platform::Message(char type, const StringRef& message)
 			}
 		}
 		line->Write(message.Pointer());
-		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), false);
+//		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), false);
 		break;
 
 	case BOTH_ERROR_MESSAGE:
@@ -1448,7 +1450,7 @@ void Platform::Message(char type, const StringRef& message)
 			}
 		}
 		line->Write(message.Pointer());
-		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), true);
+//		reprap.GetWebserver()->ResponseToWebInterface(message.Pointer(), true);
 		break;
 	}
 }
@@ -1496,12 +1498,13 @@ void Platform::AppendMessage(char type, const StringRef& message)
 		line->Write(message.Pointer(), type == DEBUG_MESSAGE);
 		break;
 
-	case WEB_MESSAGE:
+/*	case WEB_MESSAGE:
 		// Message that is to be sent to the web
 	case WEB_ERROR_MESSAGE:
 		// Message that is to be sent to the web - flags an error
 		reprap.GetWebserver()->AppendResponseToWebInterface(message.Pointer());
 		break;
+*/
 
 	case BOTH_MESSAGE:
 		// Message that is to be sent to the web & host
@@ -1513,7 +1516,7 @@ void Platform::AppendMessage(char type, const StringRef& message)
 			}
 		}
 		line->Write(message.Pointer());
-		reprap.GetWebserver()->AppendResponseToWebInterface(message.Pointer());
+//		reprap.GetWebserver()->AppendResponseToWebInterface(message.Pointer());
 		break;
 
 	case BOTH_ERROR_MESSAGE:
@@ -1529,7 +1532,7 @@ void Platform::AppendMessage(char type, const StringRef& message)
 			}
 		}
 		line->Write(message.Pointer());
-		reprap.GetWebserver()->AppendResponseToWebInterface(message.Pointer());
+//		reprap.GetWebserver()->AppendResponseToWebInterface(message.Pointer());
 		break;
 	}
 }
@@ -1622,7 +1625,7 @@ MassStorage::MassStorage(Platform* p)
 
 void MassStorage::Init()
 {
-	hsmciPinsinit();
+/*	hsmciPinsinit();
 	// Initialize SD MMC stack
 	sd_mmc_init();
 	delay(20);
@@ -1658,7 +1661,7 @@ void MassStorage::Init()
 	if (mounted != FR_OK)
 	{
 		platform->Message(HOST_MESSAGE, "Can't mount filesystem 0: code %d\n", mounted);
-	}
+	}*/
 }
 
 const char* MassStorage::CombineName(const char* directory, const char* fileName)
@@ -1707,7 +1710,7 @@ const char* MassStorage::CombineName(const char* directory, const char* fileName
 // Open a directory to read a file list. Returns true if it contains any files, false otherwise.
 bool MassStorage::FindFirst(const char *directory, FileInfo &file_info)
 {
-	TCHAR loc[64 + 1];
+/*	TCHAR loc[64 + 1];
 
 	// Remove the trailing '/' from the directory name
 	size_t len = strnlen(directory, ARRAY_SIZE(loc) - 1);	// the -1 ensures we have room for a null terminator
@@ -1757,7 +1760,7 @@ bool MassStorage::FindFirst(const char *directory, FileInfo &file_info)
 
 			return true;
 		}
-	}
+	}*/
 
 	return false;
 }
@@ -1765,7 +1768,7 @@ bool MassStorage::FindFirst(const char *directory, FileInfo &file_info)
 // Find the next file in a directory. Returns true if another file has been read.
 bool MassStorage::FindNext(FileInfo &file_info)
 {
-	FILINFO entry;
+/*	FILINFO entry;
 	entry.lfname = file_info.fileName;
 	entry.lfsize = ARRAY_SIZE(file_info.fileName);
 
@@ -1791,7 +1794,8 @@ bool MassStorage::FindNext(FileInfo &file_info)
 		strncpy(file_info.fileName, entry.fname, ARRAY_SIZE(file_info.fileName));
 	}
 
-	return true;
+	return true;*/
+    return false;
 }
 
 // Month names. The first entry is used for invalid month numbers.
@@ -1806,6 +1810,7 @@ const char* MassStorage::GetMonthName(const uint8_t month)
 // Delete a file or directory
 bool MassStorage::Delete(const char* directory, const char* fileName)
 {
+    /*
 	const char* location = (directory != NULL)
 							? platform->GetMassStorage()->CombineName(directory, fileName)
 								: fileName;
@@ -1815,46 +1820,59 @@ bool MassStorage::Delete(const char* directory, const char* fileName)
 		return false;
 	}
 	return true;
+    */
+    return false;
 }
 
 // Create a new directory
 bool MassStorage::MakeDirectory(const char *parentDir, const char *dirName)
 {
+    /*
 	const char* location = platform->GetMassStorage()->CombineName(parentDir, dirName);
 	if (f_mkdir(location) != FR_OK)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Can't create directory %s\n", location);
 		return false;
 	}
-	return true;
+	return true;*/
+    return false;
 }
 
 bool MassStorage::MakeDirectory(const char *directory)
 {
+    /*
 	if (f_mkdir(directory) != FR_OK)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Can't create directory %s\n", directory);
 		return false;
 	}
 	return true;
+    */
+    return false;
 }
 
 // Rename a file or directory
 bool MassStorage::Rename(const char *oldFilename, const char *newFilename)
 {
+    /*
 	if (f_rename(oldFilename, newFilename) != FR_OK)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Can't rename file or directory %s to %s\n", oldFilename, newFilename);
 		return false;
 	}
 	return true;
+    */
+    return false;
 }
 
 // Check if the specified directory exists
 bool MassStorage::PathExists(const char *path) const
 {
+    /*
 	DIR dir;
 	return (f_opendir(&dir, path) == FR_OK);
+    */
+    return false;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1876,6 +1894,7 @@ void FileStore::Init()
 // This is protected - only Platform can access it.
 bool FileStore::Open(const char* directory, const char* fileName, bool write)
 {
+    /*
 	const char* location = (directory != NULL)
 							? platform->GetMassStorage()->CombineName(directory, fileName)
 								: fileName;
@@ -1898,6 +1917,8 @@ bool FileStore::Open(const char* directory, const char* fileName, bool write)
 	inUse = true;
 	openCount = 1;
 	return true;
+    */
+    return false;
 }
 
 void FileStore::Duplicate()
@@ -1912,6 +1933,7 @@ void FileStore::Duplicate()
 
 bool FileStore::Close()
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to close a non-open file.\n");
@@ -1932,10 +1954,13 @@ bool FileStore::Close()
 	writing = false;
 	lastBufferEntry = 0;
 	return ok && fr == FR_OK;
+    */
+    return false;
 }
 
 bool FileStore::Seek(FilePosition pos)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to seek on a non-open file.\n");
@@ -1965,18 +1990,19 @@ bool FileStore::Seek(FilePosition pos)
 				return true;
 			}
 		}
-	}
+	}*/
 	return false;
 }
 
 FilePosition FileStore::GetPosition() const
 {
-	FilePosition pos = file.fptr;
+/*	FilePosition pos = file.fptr;
 	if (!writing && bufferPointer < lastBufferEntry)
 	{
 		pos -= (lastBufferEntry - bufferPointer);
 	}
-	return pos;
+	return pos;*/
+    return 0;
 }
 
 bool FileStore::GoToEnd()
@@ -1986,16 +2012,19 @@ bool FileStore::GoToEnd()
 
 FilePosition FileStore::Length() const
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to size non-open file.\n");
 		return 0;
 	}
-	return file.fsize;
+	return file.fsize;*/
+    return 0;
 }
 
 float FileStore::FractionRead() const
 {
+    /*
 	uint32_t len = Length();
 	if (len == 0)
 	{
@@ -2003,10 +2032,13 @@ float FileStore::FractionRead() const
 	}
 
 	return (float)GetPosition() / (float)len;
+    */
+    return 0.0;
 }
 
 int8_t FileStore::Status()
 {
+    /*
 	if (!inUse)
 		return nothing;
 
@@ -2015,12 +2047,13 @@ int8_t FileStore::Status()
 
 	if (bufferPointer < lastBufferEntry)
 		return byteAvailable;
-
+    */
 	return nothing;
 }
 
 bool FileStore::ReadBuffer()
 {
+    /*
 	FRESULT readStatus = f_read(&file, buf, FILE_BUF_LEN, &lastBufferEntry);	// Read a chunk of file
 	if (readStatus)
 	{
@@ -2029,11 +2062,14 @@ bool FileStore::ReadBuffer()
 	}
 	bufferPointer = 0;
 	return true;
+    */
+    return false;
 }
 
 // Single character read via the buffer
 bool FileStore::Read(char& b)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to read from a non-open file.\n");
@@ -2059,11 +2095,14 @@ bool FileStore::Read(char& b)
 	bufferPointer++;
 
 	return true;
+    */
+    return false;
 }
 
 // Block read, doesn't use the buffer
 int FileStore::Read(char* extBuf, unsigned int nBytes)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to read from a non-open file.\n");
@@ -2078,10 +2117,13 @@ int FileStore::Read(char* extBuf, unsigned int nBytes)
 		return -1;
 	}
 	return (int)bytes_read;
+    */
+    return -1;
 }
 
 bool FileStore::WriteBuffer()
 {
+    /*
 	if (bufferPointer != 0)
 	{
 		bool ok = InternalWriteBlock((const char*)buf, bufferPointer);
@@ -2093,10 +2135,13 @@ bool FileStore::WriteBuffer()
 		bufferPointer = 0;
 	}
 	return true;
+    */
+    return false;
 }
 
 bool FileStore::Write(char b)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to write byte to a non-open file.\n");
@@ -2108,11 +2153,13 @@ bool FileStore::Write(char b)
 	{
 		return WriteBuffer();
 	}
-	return true;
+	return true;*/
+    return false;
 }
 
 bool FileStore::Write(const char* b)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to write string to a non-open file.\n");
@@ -2126,12 +2173,14 @@ bool FileStore::Write(const char* b)
 			return false;
 		}
 	}
-	return true;
+	return true;*/
+    return false;
 }
 
 // Direct block write that bypasses the buffer. Used when uploading files.
 bool FileStore::Write(const char *s, unsigned int len)
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to write block to a non-open file.\n");
@@ -2142,10 +2191,13 @@ bool FileStore::Write(const char *s, unsigned int len)
 		return false;
 	}
 	return InternalWriteBlock(s, len);
+    */
+    return false;
 }
 
 bool FileStore::InternalWriteBlock(const char *s, unsigned int len)
 {
+    /*
 	unsigned int bytesWritten;
 	uint32_t time = micros();
 	FRESULT writeStatus = f_write(&file, s, len, &bytesWritten);
@@ -2160,10 +2212,13 @@ bool FileStore::InternalWriteBlock(const char *s, unsigned int len)
 		return false;
 	}
 	return true;
+    */
+    return false;
 }
 
 bool FileStore::Flush()
 {
+    /*
 	if (!inUse)
 	{
 		platform->Message(BOTH_ERROR_MESSAGE, "Attempt to flush a non-open file.\n");
@@ -2174,6 +2229,8 @@ bool FileStore::Flush()
 		return false;
 	}
 	return f_sync(&file) == FR_OK;
+    */
+    return false;
 }
 
 float FileStore::GetAndClearLongestWriteTime()

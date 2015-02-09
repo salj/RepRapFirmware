@@ -1,3 +1,4 @@
+#if 0
 /****************************************************************************************************
 
  RepRapFirmware - Webserver
@@ -2621,3 +2622,4 @@ unsigned int Webserver::FindFilamentUsed(const char* buf, size_t len, float *fil
 
 	return filamentsFound;
 }
+#endif

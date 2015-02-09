@@ -24,11 +24,11 @@ Licence: GPL
 #define CONFIGURATION_H
 
 #define NAME "RepRapFirmware"
-#define VERSION "1.00h-dc42"
-#define DATE "2015-02-11"
-#define AUTHORS "reprappro, dc42, zpl"
+#define VERSION "1.00h-salj"
+#define DATE "2015-02-14"
+#define AUTHORS "reprappro, dc42, zpl, salj"
 
-#define FLASH_SAVE_ENABLED	(1)
+#define FLASH_SAVE_ENABLED	(0)
 
 // Other firmware that we might switch to be compatible with.
 
@@ -44,7 +44,7 @@ enum Compatibility
 
 // Some numbers...
 
-#define AUX_BAUD_RATE	(57600)
+#define AUX_BAUD_RATE	(115200)
 
 const unsigned int GcodeLength = 100;		// Maximum length of a G Code string that we handle
 

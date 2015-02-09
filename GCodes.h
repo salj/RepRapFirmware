@@ -76,7 +76,8 @@ class GCodes
 {   
   public:
   
-    GCodes(Platform* p, Webserver* w);
+//      GCodes(Platform* p, Webserver* w);
+    GCodes(Platform* p);
     void Spin();														// Called in a tight loop to make this class work
     void Init();														// Set it up
     void Exit();														// Shut it down
@@ -158,7 +159,7 @@ class GCodes
     Platform* platform;							// The RepRap machine
     bool active;								// Live and running?
     bool isPaused;								// true if the print has been paused
-    Webserver* webserver;						// The webserver class
+//    Webserver* webserver;						// The webserver class
     float dwellTime;							// How long a pause for a dwell (seconds)?
     bool dwellWaiting;							// We are in a dwell
     GCodeBuffer* webGCode;						// The sources...
@@ -247,7 +248,7 @@ inline bool GCodes::DoingFileMacro() const
 inline bool GCodes::HaveIncomingData() const
 {
 	return fileBeingPrinted.IsLive() ||
-			webserver->GCodeAvailable() ||
+//			webserver->GCodeAvailable() ||
 			(platform->GetLine()->Status() & byteAvailable) ||
 			(platform->GetAux()->Status() & byteAvailable);
 }

@@ -23,6 +23,16 @@ Licence: GPL
 
 const size_t maxMessageLength = 30;
 
+class GcodeFileInfo
+{
+public:
+	unsigned long fileSize;
+	float objectHeight;
+	float filamentNeeded[DRIVES - AXES];
+	unsigned int numFilaments;
+	float layerHeight;
+	char generatedBy[50];
+};
 class RepRap
 {    
   public:
@@ -69,8 +79,8 @@ class RepRap
     Move* GetMove() const;
     Heat* GetHeat() const;
     GCodes* GetGCodes() const;
-    Network* GetNetwork() const;
-    Webserver* GetWebserver() const;
+//    Network* GetNetwork() const;
+//    Webserver* GetWebserver() const;
 
     void Tick();
     uint16_t GetTicksInSpinState() const;
@@ -105,11 +115,11 @@ class RepRap
     float EstimateTimeLeft(uint8_t method) const;
 
     Platform* platform;
-    Network* network;
+//    Network* network;
     Move* move;
     Heat* heat;
     GCodes* gCodes;
-    Webserver* webserver;
+//    Webserver* webserver;
 
     Tool* toolList;
     Tool* currentTool;
@@ -163,8 +173,8 @@ inline Platform* RepRap::GetPlatform() const { return platform; }
 inline Move* RepRap::GetMove() const { return move; }
 inline Heat* RepRap::GetHeat() const { return heat; }
 inline GCodes* RepRap::GetGCodes() const { return gCodes; }
-inline Network* RepRap::GetNetwork() const { return network; }
-inline Webserver* RepRap::GetWebserver() const { return webserver; }
+//inline Network* RepRap::GetNetwork() const { return network; }
+//inline Webserver* RepRap::GetWebserver() const { return webserver; }
 inline Module RepRap::GetSpinningModule() const { return spinningModule; }
 inline bool RepRap::Debug(Module m) const { return debug & (1 << m); }
 inline Tool* RepRap::GetCurrentTool() { return currentTool; }
